@@ -23,15 +23,17 @@ h1 a.edit {
     color: black;
 }
 
-span.stage {
+.stage {
     font-style: italic;
-    font-size: 80%;
+    font-size: 85%;
 }
-span.stage::before {content: "(";}
-span.stage::after {content: ")";}
-.hideLine > span.stage {
-    color: white;
+.stage > .stage {
+    font-size: 100%;
 }
+span.stage::before { content: "("; }
+span.stage::after { content: ")"; }
+
+.hideLine > span.stage { color: white; }
 
 .scene {
     font-size: 20px;

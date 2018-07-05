@@ -117,6 +117,7 @@ function update($id, $name, $url, $parent, $check_exists = true) {
     $fetch_url = "https://www.googleapis.com/drive/v3/files/" . $doc_id . "/export?mimeType=text%2Fplain&key=" . $key;
 
     $content = file_get_contents($fetch_url);
+    $content = str_replace("\r\n", "\n", $content);
     $content = preg_replace("/^[\s\S]*?===\s*/", "", $content);
     $content = preg_replace("/\s*===[\s\S]*$/", "", $content);
 
@@ -148,19 +149,19 @@ function update($id, $name, $url, $parent, $check_exists = true) {
     $content = str_replace("\"line\">Scene", "\"line scene\">Scene", $content);
     $content = str_replace("\"line\"", "\"line stage\"", $content);
     $content = str_replace("…", "...", $content);
-    $content = $mysqli->real_escape_string($content);
+    $content_e = $mysqli->real_escape_string($content);
 
-    $query = "UPDATE skits SET content='" . $content . "', characters='" . $characters . "', last_modified=NOW() WHERE id='" . $id . "';";
+    $query = "UPDATE skits SET content='" . $content_e . "', characters='" . $characters . "', last_modified=NOW() WHERE id='" . $id . "';";
     if ($check_exists) {
         if (!(($result = $mysqli->query("SELECT * FROM skits WHERE id='" . $id . "'")) && $result->fetch_row())) {
-            $query = "INSERT INTO skits (id, name, doc_id, content, characters) VALUES ('" . $id . "', '" . $name . "', '" . $doc_id . "', '" . $content . "', '" . $characters . "');";
+            $query = "INSERT INTO skits (id, name, doc_id, content, characters) VALUES ('" . $id . "', '" . $name . "', '" . $doc_id . "', '" . $content_e . "', '" . $characters . "');";
             if ($parent) {
-                $query = "INSERT INTO skits (id, name, parent, doc_id, content, characters) VALUES ('" . $id . "', '" . $name . "', '" . $parent . "', '" . $doc_id . "', '" . $content . "', '" . $characters . "');";
+                $query = "INSERT INTO skits (id, name, parent, doc_id, content, characters) VALUES ('" . $id . "', '" . $name . "', '" . $parent . "', '" . $doc_id . "', '" . $content_e . "', '" . $characters . "');";
             }
         }
     }
     if ($result = $mysqli->query($query)) {
-        return array('type' => 'skit', 'id' => $id, 'name' => $name, 'parent' => $parent, 'doc_id' => $doc_id, 'content' => $content, 'characters' => $characters);
+        return array('type' => 'skit', 'id' => $id, 'name' => $name, 'parent' => $parent, 'doc_id' => $doc_id, 'content' => $content, 'characters' => $characters, 'updated' => 'true');
     }
     return NULL;
 }
@@ -300,7 +301,7 @@ $mysqli->close();
     <link type="text/css" rel="stylesheet" href="assets/css/font-awesome.min.css?ver=20180704r0">
 
     <link type="text/css" rel="stylesheet" href="assets/css/style.min.css?ver=20180704r3">
-    <link type="text/css" rel="stylesheet" href="assets/css/skits.min.css?ver=20180704r0">
+    <link type="text/css" rel="stylesheet" href="assets/css/skits.min.css?ver=20180705r4">
     <?php if (isset($skit['type']) && $skit['type'] === 'folder'): ?>
         <script type="text/javascript">
             $('a.delete').click(function(event) {
