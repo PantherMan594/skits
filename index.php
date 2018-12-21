@@ -136,15 +136,51 @@ function update($id, $name, $url, $parent, $check_exists = true) {
     $content = preg_replace("/\"line\">([^:\n]+): /m", "\"line $1\">", $content);
     $content = preg_replace("/\(([^()]+)\)/m", "<span class=\"stage\">$1</span>", $content);
 
+    $charList = array();
     $characters = ""; 
     $blacklist = "\"|stage|scene";
-    while (preg_match("/\"line (((?!" . $blacklist . ").)*)\"/m", $content, $matches)) {
-        $display_name = $matches[1];
-        $internal = preg_replace("/\s+/", "-", strtolower($display_name));
-        $content = str_replace($matches[0], "\"line " . $internal . "\"", $content);
-        $blacklist .= "|" . $internal;
-        $characters .= $internal . ":" . $display_name . ";";
+    while (preg_match("/\"line (?!(" . addslashes($blacklist) . ")\")([^\"]+)\"/m", $content, $matches)) {
+        if (isset($charList[$matches[2]])) continue;
+        elseif ($internal = array_search($matches[2], $charList)) {
+            $content = str_replace($matches[0], "\"line " . $internal . "\"", $content);
+        } elseif (strpos($matches[2], " and ")) {
+            $internal = "";
+            foreach (explode(" and ", $matches[2]) as $display_name) {
+                if ($this_internal = array_search($display_name, $charList)) {
+                    $internal .= " " . $this_internal;
+                } else {
+                    $this_internal = preg_replace("/\s+/", "-", strtolower($display_name));
+                    $charList[$this_internal] = $display_name;
+                    $internal .= " " . $this_internal;
+                    $blacklist .= "|" . $this_internal;
+                    //$characters .= $this_internal . ":" . $display_name . ";";
+                }
+            }
+            $internal = substr($internal, 1);
+            $blacklist .= "|" . $internal;
+            $content = str_replace($matches[0], "\"line " . $internal . "\"", $content);
+        } else {
+            $display_name = $matches[2];
+            $internal = preg_replace("/\s+/", "-", strtolower($display_name));
+            $charList[$internal] = $display_name;
+            $content = str_replace($matches[0], "\"line " . $internal . "\"", $content);
+            $blacklist .= "|" . $internal;
+        }
     }
+    foreach($charList as $internal => $display) {
+        $characters .= $internal . ":" . $display . ";";
+    }
+    //while (preg_match("/\"line (((?!" . $blacklist . ").)*)\"/m", $content, $matches)) {
+    //echo $content;
+    //while (preg_match("/\"line (?!(" . addslashes($blacklist) . ")\")(.+)\"/m", $content, $matches)) {
+    //    $display_name = $matches[2];
+    //    $internal = preg_replace("/\s+/", "-", strtolower($display_name));
+    //    $content = str_replace($matches[0], "\"line " . $internal . "\"", $content);
+    //    $blacklist .= "|" . $internal;
+    //    $characters .= $internal . ":" . $display_name . ";";
+    //    echo $characters . "<br>";
+    //    echo addslashes($blacklist) . "<br>";
+    //}
 
     $content = str_replace("\"line\">Scene", "\"line scene\">Scene", $content);
     $content = str_replace("\"line\"", "\"line stage\"", $content);
@@ -251,7 +287,7 @@ $mysqli->close();
                     if ($child['type'] === "folder") {
                         $name = '<i class="fa fa-folder" aria-hidden="true" alt="Folder"></i> ' . $name;
                     }
-                    echo '<li class="child"><a href="./?id=' . $child['id'] . '">' . $name . '</a> <a href="#" class="delete" data-type="' . $child['type'] . '" id="' . $child['id'] . '">[X]</a></li>';
+                    echo '<li class="child"><a href="./?id=' . $child['id'] . '">' . $name . '</a> <a href="#" class="delete" data-type="' . $child['type'] . '" id="' . $child['id'] . '">[x]</a></li>';
                 }
                 ?>
                 <a class="create" href="./?parent=<?php echo $skit['id']; ?>">[New Skit]</a>
